@@ -66,33 +66,36 @@ class WhatsAppNotificationService : NotificationListenerService() {
 
         val packageName = sbn.packageName
         if (packageName == "com.whatsapp" || packageName == "com.whatsapp.w4b") {
-            // ABSOLUTE FOOLPROOF LOCK: Only process ONE message globally every 8 seconds.
-            // This destroys any delayed phantom/summary notifications from Android.
-            val now = System.currentTimeMillis()
-            val globalLastProcessed = lastReplyTime["_absolute_global_lock"] ?: 0L
-            if (now - globalLastProcessed < 8000) {
-                return
-            }
-            lastReplyTime["_absolute_global_lock"] = now
-
             val notification = sbn.notification
+            val extras = notification.extras
             
             // Ignore group summary notifications
             if ((notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) {
                 return
             }
             
-            val extras = notification.extras
-            
             // Is it a group chat? Skip it.
             if (extras.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION, false)) return
 
-            val rawSender = extras.getString(Notification.EXTRA_TITLE) ?: return
-            val rawMessage = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
+            var sender = extras.getString(Notification.EXTRA_TITLE) ?: ""
+            var messageText = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
             
-            // Normalize sender (remove anything in parentheses like "(2 messages)") and trim
-            val sender = rawSender.replace(Regex("\\s*\\(.*?\\)\\s*"), "").trim()
-            val messageText = rawMessage.trim()
+            // Extract from MessagingStyle if available (This bypasses WhatsApp's summary titles and gives the EXACT sender/text)
+            val messages = extras.getParcelableArray(Notification.EXTRA_MESSAGES)
+            if (messages != null && messages.isNotEmpty()) {
+                val lastMsgBundle = messages.last() as? android.os.Bundle
+                if (lastMsgBundle != null) {
+                    val msgText = lastMsgBundle.getCharSequence("text")?.toString()
+                    val person = lastMsgBundle.getParcelable<android.app.Person>("sender_person")
+                    val personName = person?.name?.toString() ?: lastMsgBundle.getCharSequence("sender")?.toString()
+                    if (msgText != null) messageText = msgText
+                    if (personName != null) sender = personName
+                }
+            }
+            
+            // Normalize sender (remove anything in parentheses) and trim
+            sender = sender.replace(Regex("\\s*\\(.*?\\)\\s*"), "").trim()
+            messageText = messageText.trim()
             
             if (sender.isEmpty() || messageText.isEmpty()) return
             
@@ -110,7 +113,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
                 return 
             }
             
-            // Deduplication for incoming messages (handles prepended names like "Sender: hello")
+            // Deduplication for incoming messages
             val lastIncoming = (lastProcessedMessages[sender] ?: "").trim()
             if (lastIncoming == messageText || (lastIncoming.isNotEmpty() && messageText.endsWith(lastIncoming))) {
                 return
@@ -119,6 +122,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
                 return // Ignore "X new messages" system notifications
             }
             
+            val now = System.currentTimeMillis()
             if (isProcessing[sender] == true) {
                 return
             }
