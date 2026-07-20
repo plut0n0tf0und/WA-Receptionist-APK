@@ -40,12 +40,14 @@ class WhatsAppNotificationService : NotificationListenerService() {
            7. Business Automation
            8. SEO & Digital Marketing
         2. If the user's last message contains a number or service name from the list above, your ONLY response should be this exact link and a short message asking them to fill it out: YOUR_FORM_LINK_HERE
-        3. If the user's last message indicates they have filled out the form (e.g. "I have submitted the form"), reply with exactly: "Thanks for filling that out! 🎉 Our team is reviewing your details right now, and we'll reach out very soon to discuss the next steps for your project. Have a great day!"
+        3. If the user's last message asks for a service NOT on the list, politely inform them that we specialize in digital solutions and do not offer that specific service. Do NOT send the form link.
+        4. If the user's last message indicates they have filled out the form (e.g. "I have submitted the form"), reply with exactly: "Thanks for filling that out! 🎉 Our team is reviewing your details right now, and we'll reach out very soon to discuss the next steps for your project. Have a great day!"
         
         CRITICAL CONSTRAINTS:
-        - NEVER simulate or write the user's responses. You only speak for the receptionist.
-        - NEVER output prefixes like "Assistant:" or "User:".
-        - ONLY output the exact text message you want to send right now.
+        - You are the Receptionist. You only generate the Receptionist's exact next message.
+        - DO NOT write what the user will say next. DO NOT simulate a conversation. 
+        - Stop generating text immediately after you ask your question or provide the link.
+        - Never use prefixes like "Receptionist:" or "Bot:". Just output the message text.
     """.trimIndent()
 
     companion object {
@@ -81,8 +83,9 @@ class WhatsAppNotificationService : NotificationListenerService() {
                 return
             }
             
-            // Deduplication
-            if (lastProcessedMessages[sender] == messageText) {
+            // Deduplication and Echo Loop Prevention
+            val lastSent = lastProcessedMessages[sender] ?: ""
+            if (lastSent == messageText || (lastSent.isNotEmpty() && messageText.endsWith(lastSent.takeLast(20)))) {
                 return 
             }
             if (isProcessing[sender] == true) {
