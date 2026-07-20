@@ -120,10 +120,16 @@ class WhatsAppNotificationService : NotificationListenerService() {
                 return
             }
             
-            // Echo Loop Prevention
-            val lastSent = (lastSentMessages[sender] ?: "").trim()
-            if (lastSent == messageText || (lastSent.isNotEmpty() && messageText.endsWith(lastSent.takeLast(20)))) {
-                return 
+            // Echo Loop Prevention (Handles truncation and foreign language prefixes like "Tú: ")
+            val cleanSent = (lastSentMessages[sender] ?: "").trim()
+            val strippedIncoming = messageText.replace(Regex("^.*?:\\s*"), "").removeSuffix("...").trim()
+            if (cleanSent.isNotEmpty() && strippedIncoming.length >= 10) {
+                val first20 = strippedIncoming.take(20)
+                if (cleanSent == messageText || cleanSent.contains(first20)) {
+                    return // Echo caught!
+                }
+            } else if (cleanSent == messageText) {
+                return
             }
             
             // Deduplication for incoming messages
