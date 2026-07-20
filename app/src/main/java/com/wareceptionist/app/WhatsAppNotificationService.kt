@@ -166,7 +166,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
             }
             if (messageSignature.isEmpty()) {
                 // Fallback for ghost notifications lacking EXTRA_MESSAGES array
-                val notifTime = extras.getLong(Notification.EXTRA_WHEN, 0L)
+                val notifTime = notification.`when`
                 messageSignature = "fallback_${notifTime}_${messageText.hashCode()}"
             }
             
