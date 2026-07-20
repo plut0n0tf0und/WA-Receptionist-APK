@@ -66,6 +66,15 @@ class WhatsAppNotificationService : NotificationListenerService() {
 
         val packageName = sbn.packageName
         if (packageName == "com.whatsapp" || packageName == "com.whatsapp.w4b") {
+            // ABSOLUTE FOOLPROOF LOCK: Only process ONE message globally every 8 seconds.
+            // This destroys any delayed phantom/summary notifications from Android.
+            val now = System.currentTimeMillis()
+            val globalLastProcessed = lastReplyTime["_absolute_global_lock"] ?: 0L
+            if (now - globalLastProcessed < 8000) {
+                return
+            }
+            lastReplyTime["_absolute_global_lock"] = now
+
             val notification = sbn.notification
             
             // Ignore group summary notifications
@@ -110,20 +119,10 @@ class WhatsAppNotificationService : NotificationListenerService() {
                 return // Ignore "X new messages" system notifications
             }
             
-            // Global short-term deduplication: if we literally just saw this exact text 2 seconds ago from anywhere, drop it
-            // This stops duplicate notifications where the OEM changes the sender name completely
-            val globalLast = lastProcessedMessages["_global_last_msg"] ?: ""
-            val globalTime = lastReplyTime["_global_last_time"] ?: 0L
-            if (globalLast == messageText && (System.currentTimeMillis() - globalTime < 3000)) {
-                return
-            }
-            lastProcessedMessages["_global_last_msg"] = messageText
-            lastReplyTime["_global_last_time"] = System.currentTimeMillis()
-            
             if (isProcessing[sender] == true) {
                 return
             }
-            if (System.currentTimeMillis() - lastReplyTime.getOrDefault(sender, 0L) < 15000) {
+            if (now - lastReplyTime.getOrDefault(sender, 0L) < 15000) {
                 return // Cooldown to avoid multiple replies to fast messages
             }
             lastProcessedMessages[sender] = messageText
