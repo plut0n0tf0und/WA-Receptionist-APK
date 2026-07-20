@@ -86,8 +86,21 @@ class WhatsAppNotificationService : NotificationListenerService() {
                 val lastMsgBundle = messages.last() as? android.os.Bundle
                 if (lastMsgBundle != null) {
                     val msgText = lastMsgBundle.getCharSequence("text")?.toString()
-                    val person = lastMsgBundle.getParcelable<android.app.Person>("sender_person")
-                    val personName = person?.name?.toString() ?: lastMsgBundle.getCharSequence("sender")?.toString()
+                    var personName = lastMsgBundle.getCharSequence("sender")?.toString()
+                    
+                    // Safe extraction for Android 9+ (API 28+) Person object without causing NoClassDefFoundError on Android 8
+                    if (personName == null && android.os.Build.VERSION.SDK_INT >= 28) {
+                        try {
+                            val personParcelable = lastMsgBundle.getParcelable<android.os.Parcelable>("sender_person")
+                            if (personParcelable != null) {
+                                val nameMethod = personParcelable.javaClass.getMethod("getName")
+                                personName = (nameMethod.invoke(personParcelable) as? CharSequence)?.toString()
+                            }
+                        } catch (e: Exception) {
+                            // Ignore reflection exceptions
+                        }
+                    }
+                    
                     if (msgText != null) messageText = msgText
                     if (personName != null) sender = personName
                 }
