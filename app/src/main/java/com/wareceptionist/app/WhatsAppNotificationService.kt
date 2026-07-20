@@ -52,6 +52,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
 
     companion object {
         private val lastProcessedMessages = mutableMapOf<String, String>()
+        private val lastSentMessages = mutableMapOf<String, String>()
         private val isProcessing = mutableMapOf<String, Boolean>()
         private val lastReplyTime = mutableMapOf<String, Long>()
     }
@@ -83,10 +84,15 @@ class WhatsAppNotificationService : NotificationListenerService() {
                 return
             }
             
-            // Deduplication and Echo Loop Prevention
-            val lastSent = lastProcessedMessages[sender] ?: ""
+            // Echo Loop Prevention
+            val lastSent = lastSentMessages[sender] ?: ""
             if (lastSent == messageText || (lastSent.isNotEmpty() && messageText.endsWith(lastSent.takeLast(20)))) {
                 return 
+            }
+            
+            // Deduplication for incoming messages
+            if (lastProcessedMessages[sender] == messageText) {
+                return
             }
             if (isProcessing[sender] == true) {
                 return
@@ -250,7 +256,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
                                             sendReply(replyAction, replyText)
                                             val now = System.currentTimeMillis()
                                             lastReplyTime[sender] = now
-                                            lastProcessedMessages[sender] = replyText
+                                            lastSentMessages[sender] = replyText
                                             prefs.edit().putLong("last_bot_reply_time", now).apply()
                                             AppLogger.log(context, "🤖 $aiProvider Booked Appointment for $sender: $dateStr $timeStr")
                                             return@launch // Stop further processing for this message
@@ -269,7 +275,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
                                     sendReply(replyAction, replyText)
                                     val now = System.currentTimeMillis()
                                     lastReplyTime[sender] = now
-                                    lastProcessedMessages[sender] = replyText
+                                    lastSentMessages[sender] = replyText
                                     prefs.edit().putLong("last_bot_reply_time", now).apply()
                                     return@launch
                                 }
@@ -283,7 +289,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
                             sendReply(replyAction, replyText)
                             val now = System.currentTimeMillis()
                             lastReplyTime[sender] = now
-                            lastProcessedMessages[sender] = replyText
+                            lastSentMessages[sender] = replyText
                             prefs.edit().putLong("last_bot_reply_time", now).apply()
                             AppLogger.log(context, "🤖 $aiProvider Replied to $sender: $replyText")
                         }
