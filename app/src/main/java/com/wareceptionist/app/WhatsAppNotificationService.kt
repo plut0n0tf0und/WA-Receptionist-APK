@@ -68,7 +68,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
         if (packageName == "com.whatsapp" || packageName == "com.whatsapp.w4b") {
             val notification = sbn.notification
             
-            // Ignore group summary notifications (which bundle multiple messages and cause double-processing)
+            // Ignore group summary notifications
             if ((notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) {
                 return
             }
@@ -76,11 +76,16 @@ class WhatsAppNotificationService : NotificationListenerService() {
             val extras = notification.extras
             
             // Is it a group chat? Skip it.
-            val isGroupConversation = extras.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION, false)
-            if (isGroupConversation) return
+            if (extras.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION, false)) return
 
-            val sender = extras.getString(Notification.EXTRA_TITLE) ?: return
-            val messageText = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
+            val rawSender = extras.getString(Notification.EXTRA_TITLE) ?: return
+            val rawMessage = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
+            
+            // Normalize sender (remove anything in parentheses like "(2 messages)") and trim
+            val sender = rawSender.replace(Regex("\\s*\\(.*?\\)\\s*"), "").trim()
+            val messageText = rawMessage.trim()
+            
+            if (sender.isEmpty() || messageText.isEmpty()) return
             
             // Filter out WhatsApp system background notifications and the bot's own sent messages
             if (sender.contains("WhatsApp", ignoreCase = true) || 
@@ -91,19 +96,29 @@ class WhatsAppNotificationService : NotificationListenerService() {
             }
             
             // Echo Loop Prevention
-            val lastSent = lastSentMessages[sender] ?: ""
+            val lastSent = (lastSentMessages[sender] ?: "").trim()
             if (lastSent == messageText || (lastSent.isNotEmpty() && messageText.endsWith(lastSent.takeLast(20)))) {
                 return 
             }
             
-            // Deduplication for incoming messages (handles cases where WhatsApp prepends names like "Sender: hello")
-            val lastIncoming = lastProcessedMessages[sender] ?: ""
+            // Deduplication for incoming messages (handles prepended names like "Sender: hello")
+            val lastIncoming = (lastProcessedMessages[sender] ?: "").trim()
             if (lastIncoming == messageText || (lastIncoming.isNotEmpty() && messageText.endsWith(lastIncoming))) {
                 return
             }
             if (messageText.matches(Regex(".*\\d+ new messages.*"))) {
                 return // Ignore "X new messages" system notifications
             }
+            
+            // Global short-term deduplication: if we literally just saw this exact text 2 seconds ago from anywhere, drop it
+            // This stops duplicate notifications where the OEM changes the sender name completely
+            val globalLast = lastProcessedMessages["_global_last_msg"] ?: ""
+            val globalTime = lastReplyTime["_global_last_time"] ?: 0L
+            if (globalLast == messageText && (System.currentTimeMillis() - globalTime < 3000)) {
+                return
+            }
+            lastProcessedMessages["_global_last_msg"] = messageText
+            lastReplyTime["_global_last_time"] = System.currentTimeMillis()
             
             if (isProcessing[sender] == true) {
                 return
