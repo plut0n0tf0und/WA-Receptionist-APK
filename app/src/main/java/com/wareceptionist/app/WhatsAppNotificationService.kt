@@ -51,10 +51,39 @@ class WhatsAppNotificationService : NotificationListenerService() {
     """.trimIndent()
 
     companion object {
-        private val lastProcessedMessages = mutableMapOf<String, String>()
-        private val lastSentMessages = mutableMapOf<String, String>()
         private val isProcessing = mutableMapOf<String, Boolean>()
-        private val lastReplyTime = mutableMapOf<String, Long>()
+        
+        // Rolling Global Echo Cache (stores last 10 messages sent by the bot)
+        private val globalSentMessages = java.util.concurrent.ConcurrentLinkedDeque<String>()
+        
+        // Message Signature Hashing (stores signatures of processed messages)
+        private val processedSignatures = java.util.concurrent.ConcurrentLinkedDeque<String>()
+        
+        @Synchronized
+        fun recordSentMessage(msg: String) {
+            globalSentMessages.addLast(msg.trim())
+            if (globalSentMessages.size > 10) globalSentMessages.removeFirst()
+        }
+        
+        @Synchronized
+        fun isEcho(incoming: String): Boolean {
+            val stripped = incoming.replace(Regex("^.*?:\\s*"), "").removeSuffix("...").trim()
+            if (stripped.length < 10) {
+                return globalSentMessages.contains(incoming.trim())
+            }
+            val first20 = stripped.take(20)
+            return globalSentMessages.any { sent -> 
+                sent == incoming.trim() || sent.contains(first20)
+            }
+        }
+        
+        @Synchronized
+        fun checkAndRecordSignature(sig: String): Boolean {
+            if (processedSignatures.contains(sig)) return true
+            processedSignatures.addLast(sig)
+            if (processedSignatures.size > 100) processedSignatures.removeFirst()
+            return false
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
@@ -120,35 +149,38 @@ class WhatsAppNotificationService : NotificationListenerService() {
                 return
             }
             
-            // Echo Loop Prevention (Handles truncation and foreign language prefixes like "Tú: ")
-            val cleanSent = (lastSentMessages[sender] ?: "").trim()
-            val strippedIncoming = messageText.replace(Regex("^.*?:\\s*"), "").removeSuffix("...").trim()
-            if (cleanSent.isNotEmpty() && strippedIncoming.length >= 10) {
-                val first20 = strippedIncoming.take(20)
-                if (cleanSent == messageText || cleanSent.contains(first20)) {
-                    return // Echo caught!
-                }
-            } else if (cleanSent == messageText) {
-                return
+            // Echo Loop Prevention (Global matching)
+            if (isEcho(messageText)) {
+                return // Echo caught!
             }
             
-            // Deduplication for incoming messages
-            val lastIncoming = (lastProcessedMessages[sender] ?: "").trim()
-            if (lastIncoming == messageText || (lastIncoming.isNotEmpty() && messageText.endsWith(lastIncoming))) {
-                return
+            // Message Signature Hashing for zero-time-blocking Deduplication
+            var messageSignature = ""
+            if (messages != null && messages.isNotEmpty()) {
+                val lastMsgBundle = messages.last() as? android.os.Bundle
+                if (lastMsgBundle != null) {
+                    val msgTime = lastMsgBundle.getLong("time", 0L)
+                    val msgText = lastMsgBundle.getCharSequence("text")?.toString() ?: ""
+                    messageSignature = "${messages.size}_${msgTime}_${msgText.hashCode()}"
+                }
             }
+            if (messageSignature.isEmpty()) {
+                // Fallback for ghost notifications lacking EXTRA_MESSAGES array
+                val notifTime = extras.getLong(Notification.EXTRA_WHEN, 0L)
+                messageSignature = "fallback_${notifTime}_${messageText.hashCode()}"
+            }
+            
+            if (checkAndRecordSignature(messageSignature)) {
+                return // Duplicate ghost notification instantly dropped!
+            }
+            
             if (messageText.matches(Regex(".*\\d+ new messages.*"))) {
                 return // Ignore "X new messages" system notifications
             }
             
-            val now = System.currentTimeMillis()
             if (isProcessing[sender] == true) {
                 return
             }
-            if (now - lastReplyTime.getOrDefault(sender, 0L) < 15000) {
-                return // Cooldown to avoid multiple replies to fast messages
-            }
-            lastProcessedMessages[sender] = messageText
             isProcessing[sender] = true
             
             AppLogger.log(this, "📩 Incoming from $sender: $messageText")
@@ -303,8 +335,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
                                             db.insertMessage(ChatMessage(sessionPhone = sender, role = "model", content = replyText, timestamp = System.currentTimeMillis()))
                                             sendReply(replyAction, replyText)
                                             val now = System.currentTimeMillis()
-                                            lastReplyTime[sender] = now
-                                            lastSentMessages[sender] = replyText
+                                            recordSentMessage(replyText)
                                             prefs.edit().putLong("last_bot_reply_time", now).apply()
                                             AppLogger.log(context, "🤖 $aiProvider Booked Appointment for $sender: $dateStr $timeStr")
                                             return@launch // Stop further processing for this message
@@ -322,8 +353,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
                                     db.insertMessage(ChatMessage(sessionPhone = sender, role = "model", content = replyText, timestamp = System.currentTimeMillis()))
                                     sendReply(replyAction, replyText)
                                     val now = System.currentTimeMillis()
-                                    lastReplyTime[sender] = now
-                                    lastSentMessages[sender] = replyText
+                                    recordSentMessage(replyText)
                                     prefs.edit().putLong("last_bot_reply_time", now).apply()
                                     return@launch
                                 }
@@ -336,8 +366,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
                             db.insertMessage(ChatMessage(sessionPhone = sender, role = "model", content = replyText, timestamp = System.currentTimeMillis()))
                             sendReply(replyAction, replyText)
                             val now = System.currentTimeMillis()
-                            lastReplyTime[sender] = now
-                            lastSentMessages[sender] = replyText
+                            recordSentMessage(replyText)
                             prefs.edit().putLong("last_bot_reply_time", now).apply()
                             AppLogger.log(context, "🤖 $aiProvider Replied to $sender: $replyText")
                         }
