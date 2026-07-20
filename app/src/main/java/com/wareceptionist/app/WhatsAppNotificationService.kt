@@ -67,6 +67,12 @@ class WhatsAppNotificationService : NotificationListenerService() {
         val packageName = sbn.packageName
         if (packageName == "com.whatsapp" || packageName == "com.whatsapp.w4b") {
             val notification = sbn.notification
+            
+            // Ignore group summary notifications (which bundle multiple messages and cause double-processing)
+            if ((notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) {
+                return
+            }
+            
             val extras = notification.extras
             
             // Is it a group chat? Skip it.
@@ -90,10 +96,15 @@ class WhatsAppNotificationService : NotificationListenerService() {
                 return 
             }
             
-            // Deduplication for incoming messages
-            if (lastProcessedMessages[sender] == messageText) {
+            // Deduplication for incoming messages (handles cases where WhatsApp prepends names like "Sender: hello")
+            val lastIncoming = lastProcessedMessages[sender] ?: ""
+            if (lastIncoming == messageText || (lastIncoming.isNotEmpty() && messageText.endsWith(lastIncoming))) {
                 return
             }
+            if (messageText.matches(Regex(".*\\d+ new messages.*"))) {
+                return // Ignore "X new messages" system notifications
+            }
+            
             if (isProcessing[sender] == true) {
                 return
             }
