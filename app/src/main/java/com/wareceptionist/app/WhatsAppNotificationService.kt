@@ -20,7 +20,7 @@ import java.io.InputStreamReader
 class WhatsAppNotificationService : NotificationListenerService() {
 
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val systemPrompt = """
+    private val baseSystemPrompt = """
         You are a warm, efficient, and professional virtual receptionist for UserXpert. 
         Your primary goal is to provide a form link for clients to fill out their details. 
         
@@ -28,26 +28,6 @@ class WhatsAppNotificationService : NotificationListenerService() {
         - Sound conversational, friendly, and naturally human. Use casual greetings.
         - Keep responses extremely brief (1-2 short sentences maximum).
         - Be empathetic and professional. Do not sound robotic.
-
-        OPERATIONAL RULES:
-        1. If the user's last message is a greeting or general inquiry, greet them and ask which service they need by providing this exact numbered list:
-           1. Custom Websites
-           2. E-commerce Solutions
-           3. UI/UX Design Services
-           4. Web Apps & Portals
-           5. Analytics Dashboards
-           6. AI Chatbots
-           7. Business Automation
-           8. SEO & Digital Marketing
-        2. If the user's last message contains a number or service name from the list above, your ONLY response should be this exact link and a short message asking them to fill it out: YOUR_FORM_LINK_HERE
-        3. If the user's last message asks for a service NOT on the list, politely inform them that we specialize in digital solutions and do not offer that specific service. Do NOT send the form link.
-        4. If the user's last message indicates they have filled out the form (e.g. "I have submitted the form"), reply with exactly: "Thanks for filling that out! 🎉 Our team is reviewing your details right now, and we'll reach out very soon to discuss the next steps for your project. Have a great day!"
-        
-        CRITICAL CONSTRAINTS:
-        - You are the Receptionist. You only generate the Receptionist's exact next message.
-        - DO NOT write what the user will say next. DO NOT simulate a conversation. 
-        - Stop generating text immediately after you ask your question or provide the link.
-        - Never use prefixes like "Receptionist:" or "Bot:". Just output the message text.
     """.trimIndent()
 
     companion object {
@@ -226,10 +206,78 @@ class WhatsAppNotificationService : NotificationListenerService() {
             val allMessages = db.getMessagesForSession(sender)
             val jsonMessages = JSONArray()
             
+            var extractedLeadId = "Unknown"
+            for (msg in allMessages) {
+                if (msg.role == "model" && msg.content.contains("lead_id=")) {
+                    val match = Regex("lead_id=(L-\\d+)").find(msg.content)
+                    if (match != null) {
+                        extractedLeadId = match.groupValues[1]
+                        break
+                    }
+                }
+            }
+            var isNewLeadId = false
+            if (extractedLeadId == "Unknown") {
+                extractedLeadId = "L-" + System.currentTimeMillis()
+                isNewLeadId = true
+            }
+            
+            // If we just generated a new Lead ID for a chat user, we MUST log it to the Sheet 
+            // so the backend can map their phone number when they submit the form later!
+            if (isNewLeadId) {
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    try {
+                        val url = java.net.URL("https://script.google.com/macros/s/AKfycbxLRftndaH_znmmYtWfL9mmP9hoWXiPaBb8sOGBO5DPXZncXF4hX5akHaMgj8CEcMwW/exec")
+                        val connection = url.openConnection() as java.net.HttpURLConnection
+                        connection.requestMethod = "POST"
+                        connection.doOutput = true
+                        connection.setRequestProperty("Content-Type", "application/json")
+                        
+                        val json = JSONObject().apply {
+                            put("leadId", extractedLeadId)
+                            put("phoneNumber", sender)
+                            put("callType", "WhatsApp Chat")
+                            put("date", java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date()))
+                            put("time", java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date()))
+                            put("messageText", "Started Chat Interaction")
+                            put("messageStatus", "N/A")
+                        }
+                        
+                        val outputStream = java.io.OutputStreamWriter(connection.outputStream)
+                        outputStream.write(json.toString())
+                        outputStream.flush()
+                        outputStream.close()
+                        connection.responseCode // execute
+                    } catch (e: Exception) {
+                        // Ignore silently
+                    }
+                }
+            }
+            
+            val dynamicSystemPrompt = baseSystemPrompt + "\n\n" + """
+                OPERATIONAL RULES:
+                1. If the user's last message is a greeting or general inquiry, greet them and ask which service they need by providing EXACTLY this message:
+                   How can we help? 
+                   Reply with number of the service you need
+                   
+                   1. Promo Website - Requirement
+                   2. Customer care - Raise ticket
+                2. If the user's last message contains a "1" or "2" or mentions these services, your ONLY response should be exactly this link and a short message asking them to fill it out: 
+                   Please fill out this form for more details: https://userxpert-form.vercel.app/?lead_id=$extractedLeadId
+                3. If the user's last message asks for a service NOT on the list, politely inform them that we specialize in digital solutions and do not offer that specific service. Do NOT send the form link.
+                4. If the user's last message indicates they have filled out the form (e.g. "I have submitted the form"), reply with exactly: "Thanks for filling that out! 🎉 Our team is reviewing your details right now, and we'll reach out very soon to discuss the next steps for your project. Have a great day!"
+                
+                CRITICAL CONSTRAINTS:
+                - You are the Receptionist. You only generate the Receptionist's exact next message.
+                - DO NOT write what the user will say next. DO NOT simulate a conversation. 
+                - Stop generating text immediately after you ask your question or provide the link.
+                - Never use prefixes like "Receptionist:" or "Bot:". Just output the message text.
+            """.trimIndent()
+
             // System prompt
             val systemMsg = JSONObject()
             systemMsg.put("role", "system")
-            systemMsg.put("content", systemPrompt)
+            systemMsg.put("content", dynamicSystemPrompt)
             jsonMessages.put(systemMsg)
             
             for (msg in allMessages) {
