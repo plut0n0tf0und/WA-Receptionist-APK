@@ -3,6 +3,7 @@ package com.wareceptionist.app
 import com.wareceptionist.app.db.AppDatabase
 import com.wareceptionist.app.db.ChatSession
 import com.wareceptionist.app.db.ChatMessage
+import kotlinx.coroutines.runBlocking
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -110,8 +111,10 @@ class CallLogService : Service() {
                             number?.let { phone ->
                                 try {
                                     val db = AppDatabase.getDatabase(this@CallLogService).chatDao()
-                                    db.insertSession(ChatSession(phone, System.currentTimeMillis()))
-                                    db.insertMessage(ChatMessage(sessionPhone = phone, role = "model", content = "System: Call received. lead_id=$leadId", timestamp = System.currentTimeMillis()))
+                                    runBlocking {
+                                        db.insertSession(ChatSession(phone, System.currentTimeMillis()))
+                                        db.insertMessage(ChatMessage(sessionPhone = phone, role = "model", content = "System: Call received. lead_id=$leadId", timestamp = System.currentTimeMillis()))
+                                    }
                                     AppLogger.log(this@CallLogService, "Saved lead_id to local chat db for $phone")
                                 } catch (e: Exception) {
                                     AppLogger.log(this@CallLogService, "Failed to save lead_id to local db: ${e.message}")
