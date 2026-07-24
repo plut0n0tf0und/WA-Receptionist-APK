@@ -255,7 +255,7 @@ class WhatsAppNotificationService : NotificationListenerService() {
             }
             
             val dynamicSystemPrompt = baseSystemPrompt + "\n\n" + """
-                1. PRE-FILLED INQUIRIES (HIGHEST PRIORITY): If the user's message starts with "Hi UserXpert" or mentions a specific service/plan from the website, DO NOT show a menu. Reply warmly in a human tone acknowledging their exact request (e.g., "Great choice on the Growth Plan!" or "Awesome! We'd love to help you build an E-commerce site!"), and politely ask them to fill out this form so we can get started: https://userx-form.vercel.app/?lead_id=$extractedLeadId
+                1. PRE-FILLED INQUIRIES (HIGHEST PRIORITY): If the user's message starts with "Hi UserXpert" or mentions a specific service/plan from the website, DO NOT show a menu. Reply warmly in a human tone acknowledging their exact request (e.g., "Great choice on the Growth Plan!" or "Awesome! We'd love to help you build an E-commerce site!"), and politely ask them to fill out this form so we can get started: https://userxdotin-form.vercel.app/?lead_id=$extractedLeadId&phone=$sender
                 2. GENERAL GREETINGS: If the user sends a simple "Hi" or general inquiry without mentioning a specific service, ask them to choose a service exactly like this:
                    How can we help? 
                    Reply with number of the service you need
@@ -263,9 +263,9 @@ class WhatsAppNotificationService : NotificationListenerService() {
                    1. Promo Website - Requirement
                    2. Customer care - Raise ticket
                 3. OPTION 1 SELECTED: If the user replies with "1" or mentions "Promo Website", send ONLY this link and a short message asking them to fill it out: 
-                   Please fill out this form for more details: https://userx-form.vercel.app/?lead_id=$extractedLeadId
+                   Please fill out this form for more details: https://userxdotin-form.vercel.app/?lead_id=$extractedLeadId&phone=$sender
                 4. OPTION 2 SELECTED: If the user replies with "2" or mentions "Customer care", send ONLY this link and a short message asking them to fill it out: 
-                   Please fill out this form for more details: https://userx-form.vercel.app/ticket_form.html?lead_id=$extractedLeadId
+                   Please fill out this form for more details: https://userxdotin-form.vercel.app/support?lead_id=$extractedLeadId&phone=$sender
                 5. UNRELATED REQUESTS: If the user asks for a service NOT on the list, politely inform them that we specialize in digital solutions and do not offer that specific service. Do NOT send the form link.
                 6. FORM SUBMITTED: If the user's message indicates they have filled out the form (e.g. "I have submitted the form"), reply with exactly: "Thanks for filling that out! 🎉 Our team is reviewing your details right now, and we'll reach out very soon to discuss the next steps for your project. Have a great day!"
                 
