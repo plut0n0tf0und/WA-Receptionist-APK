@@ -52,14 +52,22 @@ class BatteryMonitorService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
 
-        startForeground(1002, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(1002, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            startForeground(1002, notification)
+        }
 
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_BATTERY_CHANGED)
             addAction(Intent.ACTION_POWER_CONNECTED)
             addAction(Intent.ACTION_POWER_DISCONNECTED)
         }
-        registerReceiver(batteryReceiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(batteryReceiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(batteryReceiver, filter)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
