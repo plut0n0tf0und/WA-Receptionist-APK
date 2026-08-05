@@ -1,0 +1,301 @@
+# UI Foundation Reset — UserXpert Design System (Highest Priority)
+
+## IMPORTANT
+From this point onward, **ignore all previous UI, styling, component, layout, animation, and design instructions** given in this project unless they are explicitly restated below.
+
+Treat this document as the **single source of truth** for every UI decision.
+
+If any previous prompt, memory, file, or instruction conflicts with this document:
+- This document ALWAYS wins.
+- Never fall back to older styling.
+- Never mix multiple design systems.
+- Never reuse previous visual decisions unless requested.
+
+---
+
+# Our Stack
+
+Install and use:
+
+- Radix UI
+- Tailwind CSS
+- Motion (Motion for React / Framer Motion)
+
+Do NOT install or use:
+- shadcn/ui
+- Chakra UI
+- Mantine
+- Ant Design
+- Bootstrap
+- DaisyUI
+- Any other component library unless explicitly requested.
+
+---
+
+# Design Philosophy
+
+We DO NOT copy Google visually.
+
+We ONLY follow Material Design 3 principles for:
+
+- Accessibility
+- Usability
+- Form UX
+- Layout logic
+- Typography hierarchy
+- States
+- Interaction patterns
+- Motion guidelines
+
+Visual inspiration should instead feel closer to:
+
+- Linear
+- Vercel
+- Stripe
+- Raycast
+- Apple
+
+The result should feel:
+
+- Modern
+- Premium
+- Minimal
+- Futuristic
+- Fast
+- Trustworthy
+- Human
+
+Never look template-based.
+
+---
+
+# Accessibility (Mandatory)
+
+Follow:
+
+- Material Design 3
+- WCAG 2.2 AA
+- NN/g usability principles
+- Baymard form UX research
+
+Every component must include:
+
+✓ keyboard navigation
+
+✓ visible focus state
+
+✓ screen reader support
+
+✓ semantic HTML
+
+✓ proper ARIA
+
+✓ proper labels
+
+✓ logical tab order
+
+✓ accessible validation
+
+✓ accessible error messages
+
+✓ reduced motion support
+
+✓ high color contrast
+
+Accessibility is NOT optional.
+
+---
+
+# Forms
+
+Forms are the highest priority of this project.
+
+Requirements:
+
+- large touch targets
+- obvious labels
+- helper text when needed
+- inline validation
+- instant feedback
+- beautiful success states
+- disabled/loading states
+- keyboard friendly
+- autofill support
+- mobile friendly
+- country selector UX
+- never placeholder-only labels
+
+Every form should feel effortless.
+
+---
+
+# Visual Style
+
+Create a premium identity.
+
+Use:
+
+- generous whitespace
+- rounded corners
+- subtle shadows
+- elegant gradients
+- soft depth
+- premium typography
+- clean iconography
+- tasteful animations
+
+Avoid:
+
+- glassmorphism everywhere
+- neon overload
+- huge borders
+- noisy backgrounds
+- excessive blur
+- heavy gradients
+- clutter
+
+Less is more.
+
+---
+
+# Motion
+
+Use Motion for:
+
+- page transitions
+- hover feedback
+- button interactions
+- cards
+- dialogs
+- accordions
+- drawers
+- modals
+- form success
+- loading
+
+Animation rules:
+
+- subtle
+- smooth
+- performant
+
+Prefer:
+
+150–250ms
+
+Avoid flashy animations.
+
+Animations should communicate, never distract.
+
+---
+
+# Typography
+
+Base font:
+
+16px
+
+Minimum:
+
+14px
+
+Readable line heights.
+
+Strong hierarchy.
+
+Never tiny text.
+
+Never cramped spacing.
+
+---
+
+# Layout
+
+Always build using an 8px spacing system.
+
+Maintain consistent rhythm.
+
+Large breathing space.
+
+Clear visual hierarchy.
+
+Responsive first.
+
+Mobile first.
+
+---
+
+# Components
+
+Build custom branded components using Radix primitives.
+
+Do NOT make components resemble default Radix demos.
+
+Create a unique UserXpert identity.
+
+Every reusable component should be:
+
+- accessible
+- reusable
+- responsive
+- composable
+- polished
+
+---
+
+# Code Quality
+
+Every component should be:
+
+clean
+
+modular
+
+typed
+
+reusable
+
+maintainable
+
+performant
+
+accessible
+
+---
+
+# Decision Rule
+
+Whenever you are uncertain between:
+
+A) prettier
+
+B) more usable
+
+Always choose:
+
+MORE USABLE.
+
+---
+
+# Persistence
+
+Before generating any UI, silently verify:
+
+- Am I following THIS document?
+- Am I ignoring previous design instructions?
+- Am I still using Radix + Tailwind + Motion?
+- Am I following Material Design 3 principles instead of copying Material visuals?
+- Is accessibility satisfied?
+- Is this premium?
+- Is this unique?
+- Is this production-ready?
+
+If the answer to any is NO,
+
+stop,
+
+correct the design,
+
+then continue.
+
+This document remains the permanent design authority for the project until explicitly replaced.

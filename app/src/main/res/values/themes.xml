@@ -1,0 +1,11 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.CallCaptureBot" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">#25D366</item> <!-- WhatsApp Green -->
+        <item name="colorPrimaryVariant">#128C7E</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+    </style>
+
+    <style name="Theme.CallCaptureBot" parent="Base.Theme.CallCaptureBot" />
+</resources>

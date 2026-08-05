@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Call Capture Bot</string>
+    <string name="accessibility_service_description">This service automatically clicks the Send button in WhatsApp to deliver the prefilled greeting to callers.</string>
+</resources>
