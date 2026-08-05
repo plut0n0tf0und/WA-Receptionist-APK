@@ -25,7 +25,7 @@ class ForegroundLeadsSyncService : Service() {
         super.onCreate()
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, "SYNC_CHANNEL_ID")
-            .setContentTitle("WA Receptionist")
+            .setContentTitle("Enquiry Auto Responder")
             .setContentText("Syncing new leads continuously...")
             .setSmallIcon(R.mipmap.ic_launcher) // Assumes standard icon exists
             .setPriority(NotificationCompat.PRIORITY_LOW)

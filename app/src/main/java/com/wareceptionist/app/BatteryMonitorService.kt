@@ -46,7 +46,7 @@ class BatteryMonitorService : Service() {
         super.onCreate()
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, "BATTERY_MONITOR_CHANNEL")
-            .setContentTitle("WA Receptionist")
+            .setContentTitle("Enquiry Auto Responder")
             .setContentText("Battery reminder service running...")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setPriority(NotificationCompat.PRIORITY_LOW)
