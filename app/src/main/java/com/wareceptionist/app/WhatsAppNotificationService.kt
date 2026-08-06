@@ -259,9 +259,6 @@ class WhatsAppNotificationService : NotificationListenerService() {
                    Please fill out this form for more details: https://userxdotin-form.vercel.app/support?lead_id=$extractedLeadId&phone=$cleanSender
                 5. CONVERSATIONAL FOLLOW-UPS / ACKNOWLEDGMENTS: If the user replies with remarks like "Oh ok", "Thanks", "Okay", "Got it", "Will do", or asks follow-up questions AFTER receiving a link or menu, DO NOT repeat the menu! Reply warmly and dynamically in a human tone (e.g. "You're welcome! Take your time, and feel free to reach out if you have any questions while filling out the form 😊").
                 6. UNRELATED REQUESTS: If the user asks for a service NOT on our list, politely inform them that we specialize in digital solutions and do not offer that specific service. Do NOT send the form link.
-                7. FORM SUBMITTED: If the user's message indicates they have filled out the form (e.g. "I have submitted the form"), reply with exactly: "Thanks for filling that out! 🎉 Our team is reviewing your details right now, and we'll reach out very soon to discuss the next steps for your project. Have a great day!"
-            """.trimIndent()
-                
                 CRITICAL CONSTRAINTS:
                 - You are the Receptionist. You only generate the Receptionist's exact next message.
                 - DO NOT write what the user will say next. DO NOT simulate a conversation. 
