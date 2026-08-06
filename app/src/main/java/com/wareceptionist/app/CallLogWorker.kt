@@ -71,11 +71,13 @@ class CallLogWorker(private val appContext: Context, workerParams: WorkerParamet
 
                         val messageText = if (typeCode == CallLog.Calls.REJECTED_TYPE || typeCode == CallLog.Calls.MISSED_TYPE) {
                             """
-                            How can we help? 
-                            Reply with number of the service you need
-                            
-                            1. Promo Website - Requirement
-                            2. Customer care - Raise ticket
+                            Welcome to UserX.in 👋
+
+                            How can we help you today?
+
+                            Reply with the number of the service you need:
+                            1 — Discuss a New Project
+                            2 — Get Customer Support
                             """.trimIndent()
                         } else {
                             ""

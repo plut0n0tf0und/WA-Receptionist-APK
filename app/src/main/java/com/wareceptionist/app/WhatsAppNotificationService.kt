@@ -265,11 +265,13 @@ class WhatsAppNotificationService : NotificationListenerService() {
             val dynamicSystemPrompt = baseSystemPrompt + "\n\n" + """
                 1. PRE-FILLED INQUIRIES (HIGHEST PRIORITY): If the user's message starts with "Hi UserXpert" or mentions a specific service/plan from the website, DO NOT show a menu. Reply warmly in a human tone acknowledging their exact request (e.g., "Great choice on the Growth Plan!" or "Awesome! We'd love to help you build an E-commerce site!"), and politely ask them to fill out this form so we can get started: https://userxdotin-form.vercel.app/?lead_id=$extractedLeadId&phone=$cleanSender
                 2. GENERAL GREETINGS: If the user sends a simple "Hi" or general inquiry without mentioning a specific service, ask them to choose a service exactly like this:
-                   How can we help? 
-                   Reply with number of the service you need
-                   
-                   1. Promo Website - Requirement
-                   2. Customer care - Raise ticket
+                   Welcome to UserX.in 👋
+
+                   How can we help you today?
+
+                   Reply with the number of the service you need:
+                   1 — Discuss a New Project
+                   2 — Get Customer Support
                 3. OPTION 1 SELECTED: If the user replies with "1" or mentions "Promo Website", send ONLY this link and a short message asking them to fill it out: 
                    Please fill out this form for more details: https://userxdotin-form.vercel.app/?lead_id=$extractedLeadId&phone=$cleanSender
                 4. OPTION 2 SELECTED: If the user replies with "2" or mentions "Customer care", send ONLY this link and a short message asking them to fill it out: 

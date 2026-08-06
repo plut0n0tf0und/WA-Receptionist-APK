@@ -148,15 +148,13 @@ class CallLogService : Service() {
             if (cleanNumber.length < 5) return
 
             val message = """
-                Hey! 👋 Welcome to UserXpert.
+                Welcome to UserX.in 👋
 
-                We received your call. Let us know what you're looking for, and we'll be happy to help.
+                How can we help you today?
 
-                How can we help? 
-                Reply with number of the service you need
-                
-                1. Promo Website - Requirement
-                2. Customer care - Raise ticket
+                Reply with the number of the service you need:
+                1 — Discuss a New Project
+                2 — Get Customer Support
             """.trimIndent()
             val encodedMessage = java.net.URLEncoder.encode(message, "UTF-8")
             val url = "https://api.whatsapp.com/send?phone=$cleanNumber&text=$encodedMessage"
