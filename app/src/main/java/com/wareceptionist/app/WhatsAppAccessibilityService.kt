@@ -12,8 +12,8 @@ class WhatsAppAccessibilityService : AccessibilityService() {
         val prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
 
         val lastBotReplyTime = prefs.getLong("last_bot_reply_time", 0L)
-        // Window of 5 seconds to allow WhatsApp to open and the button to appear
-        if (System.currentTimeMillis() - lastBotReplyTime > 5000) {
+        // Window of 15 seconds to allow WhatsApp to open and the button to appear
+        if (System.currentTimeMillis() - lastBotReplyTime > 15000) {
             return 
         }
 
@@ -22,47 +22,56 @@ class WhatsAppAccessibilityService : AccessibilityService() {
             
             val rootNode = rootInActiveWindow ?: return
 
-            // Search by common Send button IDs
-            val sendNodes = rootNode.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send")
-            val w4bNodes = rootNode.findAccessibilityNodeInfosByViewId("com.whatsapp.w4b:id/send")
+            // Search by common Send button IDs across normal WhatsApp and WhatsApp Business
+            val targetIds = arrayOf(
+                "com.whatsapp:id/send",
+                "com.whatsapp.w4b:id/send",
+                "com.whatsapp:id/send_button",
+                "com.whatsapp.w4b:id/send_button",
+                "com.whatsapp:id/entry_action_button",
+                "com.whatsapp.w4b:id/entry_action_button"
+            )
             
             val allSendNodes = mutableListOf<AccessibilityNodeInfo>()
-            if (sendNodes != null) allSendNodes.addAll(sendNodes)
-            if (w4bNodes != null) allSendNodes.addAll(w4bNodes)
+            for (id in targetIds) {
+                val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
+                if (nodes != null) allSendNodes.addAll(nodes)
+            }
             
-            if (allSendNodes.isNotEmpty()) {
-                for (node in allSendNodes) {
-                    if (node.isClickable) {
-                        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                        AppLogger.log(this, "🤖 Phase 2: Sent message via Accessibility!")
-                        prefs.edit().putLong("last_bot_reply_time", 0L).apply()
-                        // Relaunch our app to hide WhatsApp immediately
-                        val launchIntent = android.content.Intent(this, MainActivity::class.java).apply {
-                            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        }
-                        startActivity(launchIntent)
-                        
-                        return
+            for (node in allSendNodes) {
+                if (node.isClickable || node.parent?.isClickable == true) {
+                    val targetToClick = if (node.isClickable) node else node.parent
+                    targetToClick?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    AppLogger.log(this, "🤖 Phase 2: Sent message via Accessibility (ID match)!")
+                    prefs.edit().putLong("last_bot_reply_time", 0L).apply()
+                    
+                    // Relaunch our app to hide WhatsApp immediately
+                    val launchIntent = android.content.Intent(this, MainActivity::class.java).apply {
+                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     }
+                    startActivity(launchIntent)
+                    return
                 }
-            } else {
-                // Fallback: search by content description "Send"
-                val allNodes = mutableListOf<AccessibilityNodeInfo>()
-                findAllNodes(rootNode, allNodes)
-                for (node in allNodes) {
-                    val desc = node.contentDescription?.toString() ?: ""
-                    if (node.isClickable && desc.equals("Send", ignoreCase = true)) {
-                        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                        AppLogger.log(this, "🤖 Phase 2: Sent message via Accessibility (Fallback)!")
-                        prefs.edit().putLong("last_bot_reply_time", 0L).apply()
-                        // Relaunch our app to hide WhatsApp immediately
-                        val launchIntent = android.content.Intent(this, MainActivity::class.java).apply {
-                            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        }
-                        startActivity(launchIntent)
+            }
 
-                        return
+            // Fallback: search node tree by content description "Send"
+            val allNodes = mutableListOf<AccessibilityNodeInfo>()
+            findAllNodes(rootNode, allNodes)
+            for (node in allNodes) {
+                val desc = node.contentDescription?.toString() ?: ""
+                val resId = node.viewIdResourceName ?: ""
+                if ((desc.equals("Send", ignoreCase = true) || resId.contains("send", ignoreCase = true)) && 
+                    (node.isClickable || node.parent?.isClickable == true)) {
+                    val targetToClick = if (node.isClickable) node else node.parent
+                    targetToClick?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    AppLogger.log(this, "🤖 Phase 2: Sent message via Accessibility (Fallback)!")
+                    prefs.edit().putLong("last_bot_reply_time", 0L).apply()
+                    
+                    val launchIntent = android.content.Intent(this, MainActivity::class.java).apply {
+                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     }
+                    startActivity(launchIntent)
+                    return
                 }
             }
         }
