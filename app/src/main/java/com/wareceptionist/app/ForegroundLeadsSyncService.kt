@@ -87,13 +87,18 @@ class ForegroundLeadsSyncService : Service() {
                                     val name = lead.optString("name", "there")
                                     val type = lead.optString("type", "lead")
                                     val email = lead.optString("email", "")
+                                    val leadId = lead.optString("leadId", "")
                                     
                                     if (phone.isNotEmpty()) {
                                         AppLogger.log(applicationContext, "🤖 Sending confirmation to new $type: $name")
+                                        val cleanName = if (name.isNotBlank() && name != "there") name else "there"
+                                        val encodedPhone = java.net.URLEncoder.encode(phone, "UTF-8")
+                                        val formLink = "https://userxdotin-form.vercel.app/?lead_id=$leadId&phone=$encodedPhone"
+                                        
                                         val message = when (type) {
-                                            "ticket" -> "Hi $name, we got your issue! We also have sent an email about the details of your submission - we will get back to you."
-                                            "abandoned_lead" -> "Hi $name, we noticed you started your project enquiry on userXpert but didn't finish. Do you have any questions or need help completing it?"
-                                            else -> "Hi $name, thanks for your submission! We also have sent an email about the details of your submission - we will get back to you."
+                                            "ticket" -> "Hi $cleanName, we got your issue! We also have sent an email about the details of your submission - we will get back to you."
+                                            "abandoned_lead" -> "Hi $cleanName,\n\nYour project enquiry has been saved as a draft.\n\nIf you'd like us to review it, you can complete it here:\n\n$formLink"
+                                            else -> "Hi $cleanName, thanks for your submission! We also have sent an email about the details of your submission - we will get back to you."
                                         }
                                         sendWhatsAppConfirmation(phone, message)
                                         
