@@ -43,8 +43,9 @@ class ForegroundLeadsSyncService : Service() {
         scope.launch {
             while (isActive) {
                 try {
-                    val url = URL(WEB_APP_URL)
-                    val connection = url.openConnection() as HttpURLConnection
+                    var currentUrl = URL(WEB_APP_URL)
+                    var connection = currentUrl.openConnection() as HttpURLConnection
+                    connection.instanceFollowRedirects = false
                     connection.requestMethod = "POST"
                     connection.doOutput = true
                     connection.setRequestProperty("Content-Type", "application/json")
@@ -58,11 +59,25 @@ class ForegroundLeadsSyncService : Service() {
                     outputStream.flush()
                     outputStream.close()
                     
-                    if (connection.responseCode in 200..299) {
-                        val responseMsg = connection.inputStream.bufferedReader().use { it.readText() }
-                        val responseJson = JSONObject(responseMsg)
+                    var responseCode = connection.responseCode
+                    if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || 
+                        responseCode == HttpURLConnection.HTTP_MOVED_PERM || 
+                        responseCode == 307 || responseCode == 308) {
                         
-                        if (responseJson.optString("status") == "success") {
+                        val redirectUrl = connection.getHeaderField("Location")
+                        if (redirectUrl != null) {
+                            connection = URL(redirectUrl).openConnection() as HttpURLConnection
+                            connection.requestMethod = "GET"
+                            responseCode = connection.responseCode
+                        }
+                    }
+                    
+                    if (responseCode in 200..299) {
+                        val responseMsg = connection.inputStream.bufferedReader().use { it.readText() }
+                        if (responseMsg.trim().startsWith("{")) {
+                            val responseJson = JSONObject(responseMsg)
+                            
+                            if (responseJson.optString("status") == "success") {
                             val leadsArray = responseJson.optJSONArray("leads") ?: JSONArray()
                             
                             if (leadsArray.length() > 0) {
@@ -85,6 +100,7 @@ class ForegroundLeadsSyncService : Service() {
                                         // Sleep briefly to let Accessibility Service do its job before opening the next one
                                         delay(8000)
                                     }
+                                }
                                 }
                             }
                         }
