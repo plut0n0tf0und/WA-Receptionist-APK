@@ -83,7 +83,7 @@ class CallLogWorker(private val appContext: Context, workerParams: WorkerParamet
                             ""
                         }
                         
-                        val leadId = "L-" + System.currentTimeMillis()
+                        val (leadId, _) = LeadIdManager.getOrCreateLeadId(appContext, number ?: "Unknown")
 
                         var finalMessageText = messageText
                         

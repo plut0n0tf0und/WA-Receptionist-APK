@@ -206,21 +206,9 @@ class WhatsAppNotificationService : NotificationListenerService() {
             val allMessages = db.getMessagesForSession(sender)
             val jsonMessages = JSONArray()
             
-            var extractedLeadId = "Unknown"
-            for (msg in allMessages) {
-                if (msg.role == "model" && msg.content.contains("lead_id=")) {
-                    val match = Regex("lead_id=(L-\\d+)").find(msg.content)
-                    if (match != null) {
-                        extractedLeadId = match.groupValues[1]
-                        break
-                    }
-                }
-            }
-            var isNewLeadId = false
-            if (extractedLeadId == "Unknown") {
-                extractedLeadId = "L-" + System.currentTimeMillis()
-                isNewLeadId = true
-            }
+            // Get or create persistent Lead ID for this sender
+            val (extractedLeadId, isNewLeadId) = LeadIdManager.getOrCreateLeadId(context, sender)
+            val cleanSender = LeadIdManager.sanitizePhone(sender)
             
             // If we just generated a new Lead ID for a chat user, we MUST log it to the Sheet 
             // so the backend can map their phone number when they submit the form later!
