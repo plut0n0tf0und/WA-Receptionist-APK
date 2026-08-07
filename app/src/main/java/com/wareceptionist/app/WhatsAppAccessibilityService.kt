@@ -22,14 +22,18 @@ class WhatsAppAccessibilityService : AccessibilityService() {
             
             val rootNode = rootInActiveWindow ?: return
 
-            // Search by common Send button IDs across normal WhatsApp and WhatsApp Business
+            // Search by common Send button IDs across normal WhatsApp and WhatsApp Business (including media preview caption_send_button)
             val targetIds = arrayOf(
                 "com.whatsapp:id/send",
                 "com.whatsapp.w4b:id/send",
                 "com.whatsapp:id/send_button",
                 "com.whatsapp.w4b:id/send_button",
+                "com.whatsapp:id/caption_send_button",
+                "com.whatsapp.w4b:id/caption_send_button",
                 "com.whatsapp:id/entry_action_button",
-                "com.whatsapp.w4b:id/entry_action_button"
+                "com.whatsapp.w4b:id/entry_action_button",
+                "com.whatsapp:id/ok",
+                "com.whatsapp.w4b:id/ok"
             )
             
             val allSendNodes = mutableListOf<AccessibilityNodeInfo>()

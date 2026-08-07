@@ -157,15 +157,25 @@ class CallLogService : Service() {
                 2 — Get Customer Support
             """.trimIndent()
             val bannerUri = BannerHelper.getBannerUri(this)
-            val digitsOnly = phoneNumber.filter { it.isDigit() }
-            val jid = "$digitsOnly@s.whatsapp.net"
+            val sanitizedPhone = LeadIdManager.sanitizePhone(phoneNumber)
+            val cleanDigits = sanitizedPhone.filter { it.isDigit() }
+            val jid = "$cleanDigits@s.whatsapp.net"
+
+            val isBusinessInstalled = try {
+                packageManager.getPackageInfo("com.whatsapp.w4b", 0)
+                true
+            } catch (e: Exception) { false }
+            
+            val targetPackage = if (isBusinessInstalled) "com.whatsapp.w4b" else "com.whatsapp"
 
             val intent = if (bannerUri != null) {
+                grantUriPermission(targetPackage, bannerUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 Intent(Intent.ACTION_SEND).apply {
                     type = "image/jpeg"
                     putExtra(Intent.EXTRA_STREAM, bannerUri)
                     putExtra(Intent.EXTRA_TEXT, message)
                     putExtra("jid", jid)
+                    setPackage(targetPackage)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
@@ -173,23 +183,9 @@ class CallLogService : Service() {
                 val encodedMessage = java.net.URLEncoder.encode(message, "UTF-8")
                 val url = "https://api.whatsapp.com/send?phone=$cleanNumber&text=$encodedMessage"
                 Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
+                    setPackage(targetPackage)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-            }
-            
-            val isBusinessInstalled = try {
-                packageManager.getPackageInfo("com.whatsapp.w4b", 0)
-                true
-            } catch (e: Exception) { false }
-            
-            if (isBusinessInstalled) {
-                intent.setPackage("com.whatsapp.w4b")
-            } else {
-                val isNormalInstalled = try {
-                    packageManager.getPackageInfo("com.whatsapp", 0)
-                    true
-                } catch (e: Exception) { false }
-                if (isNormalInstalled) intent.setPackage("com.whatsapp")
             }
             
             getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit().putLong("last_bot_reply_time", System.currentTimeMillis()).apply()
