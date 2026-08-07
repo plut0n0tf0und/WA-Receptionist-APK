@@ -40,15 +40,31 @@
                     android:paddingVertical="16dp"
                     android:layout_gravity="top">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:text="WA RECEPTIONIST"
-                        android:textColor="#111111"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/tenor_sans" />
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ENQUIRY AUTO RESPONDER"
+                            android:textColor="#111111"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/tenor_sans" />
+
+                        <TextView
+                            android:id="@+id/tvVersionTag"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="v8.0.26 — Banner Image &amp; Dynamic AI Update"
+                            android:textColor="#8C0C8E"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/btnAppInfo"

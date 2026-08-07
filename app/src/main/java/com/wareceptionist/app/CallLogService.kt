@@ -38,7 +38,7 @@ class CallLogService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Call Capture Bot")
+            .setContentTitle("Enquiry Auto Responder")
             .setContentText("Processing call details...")
             .setSmallIcon(android.R.drawable.stat_sys_phone_call)
             .build()

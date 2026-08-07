@@ -342,7 +342,8 @@ class MainActivity : AppCompatActivity() {
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         val infoText = """
-Welcome to Call Capture Bot!
+Welcome to Enquiry Auto Responder!
+Build: v8.0.26 — Banner Image & Dynamic AI Update
 
 Here is everything you need to know about what this app does, how it works, and why your data stays safe with us.
 
