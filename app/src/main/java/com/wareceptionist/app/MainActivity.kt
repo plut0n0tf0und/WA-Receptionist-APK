@@ -343,7 +343,7 @@ class MainActivity : AppCompatActivity() {
 
         val infoText = """
 Welcome to Enquiry Auto Responder!
-Build: v8.0.26 — Banner Image & Dynamic AI Update
+Build: v8.0.27 — AOD Screen Wakeup & Auto-Send Fix
 
 Here is everything you need to know about what this app does, how it works, and why your data stays safe with us.
 

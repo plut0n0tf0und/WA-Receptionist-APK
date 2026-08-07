@@ -103,6 +103,18 @@ class LeadsSyncWorker(private val appContext: Context, workerParams: WorkerParam
             val cleanNumber = phoneNumber.filter { it.isDigit() || it == '+' }
             if (cleanNumber.length < 5) return
 
+            // Wake up screen from AOD mode so Accessibility Service can auto-click Send
+            try {
+                val powerManager = appContext.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                val wakeLock = powerManager.newWakeLock(
+                    android.os.PowerManager.FULL_WAKE_LOCK or android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP or android.os.PowerManager.ON_AFTER_RELEASE,
+                    "EnquiryAutoResponder:WorkerAODWakeLock"
+                )
+                wakeLock.acquire(8000)
+            } catch (e: Exception) {
+                AppLogger.log(appContext, "⚠️ WakeLock error: ${e.message}")
+            }
+
             val encodedMessage = java.net.URLEncoder.encode(message, "UTF-8")
             val url = "https://api.whatsapp.com/send?phone=$cleanNumber&text=$encodedMessage"
             

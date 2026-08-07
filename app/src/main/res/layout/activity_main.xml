@@ -59,7 +59,7 @@
                             android:id="@+id/tvVersionTag"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="v8.0.26 — Banner Image &amp; Dynamic AI Update"
+                            android:text="v8.0.27 — AOD Screen Wakeup &amp; Auto-Send Fix"
                             android:textColor="#8C0C8E"
                             android:textSize="11sp"
                             android:textStyle="bold"

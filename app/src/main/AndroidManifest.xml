@@ -17,6 +17,10 @@
     <!-- Permission to place direct cellular calls for Battery Reminder -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
 
+    <!-- Permissions for screen wakeup from AOD to allow Accessibility auto-send -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+
     <!-- Required for Android 11+ to query installed apps (like WhatsApp) -->
     <queries>
         <package android:name="com.whatsapp" />

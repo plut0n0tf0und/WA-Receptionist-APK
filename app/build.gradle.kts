@@ -12,8 +12,8 @@ android {
         applicationId = "com.wareceptionist.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 8026
-        versionName = "8.0.26"
+        versionCode = 8027
+        versionName = "8.0.27"
     }
 
     buildTypes {
