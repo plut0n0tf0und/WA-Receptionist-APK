@@ -22,7 +22,34 @@ class WhatsAppAccessibilityService : AccessibilityService() {
             
             val rootNode = rootInActiveWindow ?: return
 
-            // Search by common Send button IDs across normal WhatsApp and WhatsApp Business (including media preview caption_send_button)
+            // -----------------------------------------------------------
+            // STEP 1: CONTACT PICKER SCREEN (If WhatsApp opens "Send to...")
+            // -----------------------------------------------------------
+            val contactPickerIds = arrayOf(
+                "com.whatsapp:id/contact_row_container",
+                "com.whatsapp.w4b:id/contact_row_container",
+                "com.whatsapp:id/contactpicker_row_name",
+                "com.whatsapp.w4b:id/contactpicker_row_name",
+                "com.whatsapp:id/contact_name",
+                "com.whatsapp.w4b:id/contact_name"
+            )
+            for (id in contactPickerIds) {
+                val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
+                if (!nodes.isNullOrEmpty()) {
+                    for (node in nodes) {
+                        if (node.isClickable || node.parent?.isClickable == true) {
+                            val targetToClick = if (node.isClickable) node else node.parent
+                            targetToClick?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                            AppLogger.log(this, "🤖 Phase 1.5: Auto-selected Contact from Picker!")
+                            return
+                        }
+                    }
+                }
+            }
+
+            // -----------------------------------------------------------
+            // STEP 2: IMAGE PREVIEW / CHAT SEND BUTTON SCREEN
+            // -----------------------------------------------------------
             val targetIds = arrayOf(
                 "com.whatsapp:id/send",
                 "com.whatsapp.w4b:id/send",
@@ -30,6 +57,8 @@ class WhatsAppAccessibilityService : AccessibilityService() {
                 "com.whatsapp.w4b:id/send_button",
                 "com.whatsapp:id/caption_send_button",
                 "com.whatsapp.w4b:id/caption_send_button",
+                "com.whatsapp:id/next_btn",
+                "com.whatsapp.w4b:id/next_btn",
                 "com.whatsapp:id/entry_action_button",
                 "com.whatsapp.w4b:id/entry_action_button",
                 "com.whatsapp:id/ok",
