@@ -142,15 +142,28 @@ class CallLogWorker(private val appContext: Context, workerParams: WorkerParamet
 
     private fun sendWhatsAppIntro(phoneNumber: String, message: String) {
         try {
-            // Basic sanitization: keep '+' and digits
             val cleanNumber = phoneNumber.filter { it.isDigit() || it == '+' }
             if (cleanNumber.length < 5) return
 
-            val encodedMessage = java.net.URLEncoder.encode(message, "UTF-8")
-            val url = "https://api.whatsapp.com/send?phone=$cleanNumber&text=$encodedMessage"
-            
-            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val bannerUri = BannerHelper.getBannerUri(appContext)
+            val digitsOnly = phoneNumber.filter { it.isDigit() }
+            val jid = "$digitsOnly@s.whatsapp.net"
+
+            val intent = if (bannerUri != null) {
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "image/jpeg"
+                    putExtra(Intent.EXTRA_STREAM, bannerUri)
+                    putExtra(Intent.EXTRA_TEXT, message)
+                    putExtra("jid", jid)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            } else {
+                val encodedMessage = java.net.URLEncoder.encode(message, "UTF-8")
+                val url = "https://api.whatsapp.com/send?phone=$cleanNumber&text=$encodedMessage"
+                Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
             }
             
             val isBusinessInstalled = try {
@@ -170,8 +183,10 @@ class CallLogWorker(private val appContext: Context, workerParams: WorkerParamet
             
             try {
                 appContext.startActivity(intent)
-                AppLogger.log(appContext, "🤖 Phase 1: Opened WhatsApp to message $cleanNumber")
+                AppLogger.log(appContext, "🤖 Phase 1: Opened WhatsApp with Banner Image to message $cleanNumber")
             } catch (e: android.content.ActivityNotFoundException) {
+                val encodedMessage = java.net.URLEncoder.encode(message, "UTF-8")
+                val url = "https://api.whatsapp.com/send?phone=$cleanNumber&text=$encodedMessage"
                 val fallbackIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }

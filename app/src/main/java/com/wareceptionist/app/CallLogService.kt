@@ -156,11 +156,25 @@ class CallLogService : Service() {
                 1 — Discuss a New Project
                 2 — Get Customer Support
             """.trimIndent()
-            val encodedMessage = java.net.URLEncoder.encode(message, "UTF-8")
-            val url = "https://api.whatsapp.com/send?phone=$cleanNumber&text=$encodedMessage"
-            
-            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val bannerUri = BannerHelper.getBannerUri(this)
+            val digitsOnly = phoneNumber.filter { it.isDigit() }
+            val jid = "$digitsOnly@s.whatsapp.net"
+
+            val intent = if (bannerUri != null) {
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "image/jpeg"
+                    putExtra(Intent.EXTRA_STREAM, bannerUri)
+                    putExtra(Intent.EXTRA_TEXT, message)
+                    putExtra("jid", jid)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            } else {
+                val encodedMessage = java.net.URLEncoder.encode(message, "UTF-8")
+                val url = "https://api.whatsapp.com/send?phone=$cleanNumber&text=$encodedMessage"
+                Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
             }
             
             val isBusinessInstalled = try {
@@ -178,8 +192,9 @@ class CallLogService : Service() {
                 if (isNormalInstalled) intent.setPackage("com.whatsapp")
             }
             
+            getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit().putLong("last_bot_reply_time", System.currentTimeMillis()).apply()
             startActivity(intent)
-            AppLogger.log(this, "🤖 Phase 1: Opened WhatsApp to message $cleanNumber")
+            AppLogger.log(this, "🤖 Phase 1: Opened WhatsApp with Banner Image to message $cleanNumber")
         } catch (e: Exception) {
             AppLogger.log(this, "❌ Failed to open WhatsApp: ${e.message}")
         }
